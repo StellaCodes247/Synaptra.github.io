@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Image Classifier (MobileNet)</title>
+  <link rel="stylesheet" href="../assets/style.css" />
+  <!-- TF.js + pre-trained MobileNet -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.0"></script>
+</head>
+<body>
+  <div class="container">
+    <nav style="margin:16px 0;"><a href="../index.html">← Back</a></nav>
+
+    <h1>Image Classifier (MobileNet)</h1>
+    <p>Upload an image and run MobileNet in your browser — no server required.</p>
+
+    <div class="card" style="display:flex; gap:16px; align-items:flex-start; flex-wrap:wrap;">
+      <div>
+        <input id="file" type="file" accept="image/*" />
+        <div style="margin-top:12px">
+          <button id="run" class="btn" disabled>Classify</button>
+        </div>
+      </div>
+
+      <div>
+        <img id="preview" alt="preview" style="max-width:360px; display:none; border-radius:8px;" />
+      </div>
+
+      <div style="min-width:260px;">
+        <h3>Top Predictions</h3>
+        <ol id="results"></ol>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let model = null;
+    const fileEl = document.getElementById('file');
+    const previewEl = document.getElementById('preview');
+    const runBtn = document.getElementById('run');
+    const resultsEl = document.getElementById('results');
+
+    async function loadModel(){
+      runBtn.textContent = 'Loading model…';
+      runBtn.disabled = true;
+      model = await mobilenet.load(); // downloads weights from CDN
+      runBtn.textContent = 'Classify';
+      runBtn.disabled = false;
+    }
+    loadModel();
+
+    fileEl.addEventListener('change', () => {
+      const f = fileEl.files[0];
+      if (!f) return;
+      const url = URL.createObjectURL(f);
+      previewEl.src = url;
+      previewEl.style.display = 'block';
+      resultsEl.innerHTML = '';
+    });
+
+    runBtn.addEventListener('click', async () => {
+      if (!model || !previewEl.src) return;
+      runBtn.disabled = true;
+      runBtn.textContent = 'Running…';
+      const preds = await model.classify(previewEl, 5);
+      resultsEl.innerHTML = preds.map(p =>
+        `<li>${p.className} — ${(p.probability*100).toFixed(1)}%</li>`
+      ).join('');
+      runBtn.textContent = 'Classify';
+      runBtn.disabled = false;
+    });
+  </script>
+</body>
+</html>
